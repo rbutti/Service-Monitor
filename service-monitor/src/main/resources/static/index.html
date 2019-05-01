@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="ISO-8859-1">
+
+<title>Service Monitor Application</title>
+
+<link href="css/bootstrap-table.min.css" rel="stylesheet">
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet"
+	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="/resources/demos/style.css">
+<link rel="stylesheet" type="text/css"
+	href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.css" />
+
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script type="text/javascript" src="js/bootstrap-table.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.js"></script>
+
+<style>
+tr td {
+	padding: 0.5em !important;
+	margin: 0.5em !important;
+}
+
+th {
+	padding: 0 !important;
+	margin: 0 !important;
+	background-color: #8e1320;
+	color: white;
+}
+</style>
+
+</head>
+<body style="margin-top: 20px">
+
+<div class="d-flex justify-content-center align-items-center container "> 
+	<form action="/" id="scheduleForm">
+		<div class="row">
+			<label class="col-md-2" for="name">Scheduler Name*</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control input-sm" name="s"
+					placeholder="John Doe" required>
+			</div>
+		</div>
+		<div class="row">
+			<label class="col-md-2" for="email">Email to Notify*</label>
+			<div class="col-md-4">
+				<input type="email" class="form-control input-sm" name="email"
+					id="email" placeholder="john@doe.com" required>
+			</div>
+		</div>
+		<div class="row">
+			<label class="col-md-2" for="graceTime">Grace Time in seconds</label>
+			<div class="col-md-4">
+				<input type="number" class="form-control input-sm" name="graceTime"
+					id="graceTime" placeholder="Grace Time" value="0">
+			</div>
+		</div>
+		<div class="row">
+			<label class="col-md-2" for="outageFrom">Outage From</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control input-sm" id="outageFrom"
+					name="outageFrom" placeholder="Outage From">
+			</div>
+		</div>
+		<div class="row">
+			<label class="col-md-2" for="outageTo">Outage To</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control input-sm" id="outageTo"
+					name="outageTo" placeholder="Outage From">
+			</div>
+		</div>
+		<div class="row">
+			<label class="col-md-2" for="hostName">Host Name*</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control input-sm" name="hostName"
+					id="hostName" placeholder="hostName" required>
+			</div>
+		</div>
+		<div class="row">
+			<label class="col-md-2" for="port">Port*</label>
+			<div class="col-md-4">
+				<input type="number" class="form-control input-sm" name="port"
+					id="port" placeholder="port" required>
+			</div>
+		</div>
+		<div class="row">
+
+			<label class="col-md-2" for="cronExpression">Cron Expression*</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control input-sm"
+					name="cronExpression" id="cronExpression"
+					placeholder="0 0/1 * 1/1 * ? *"  required>
+			</div>
+		</div>
+		<input type="submit" value="Submit">
+	</form>
+</div>
+
+	<!-- FORM ENDS -->
+	<div class="row">
+		<hr />
+		<div class="col-md-9 col-md-offset-1">
+			<table style="width: 100%" id="schedulerTable" data-toggle="table"
+				data-url="list" data-method="post" data-pagination="true"
+				data-side-pagination="server"
+				data-response-handler="responseHandler">
+				<thead>
+					<tr>
+						<th data-field="state" data-checkbox="true"></th>
+						<th data-field="id" data-halign="center" data-align="center"
+							data-sortable="false">ID</th>
+						<th data-field="name" data-halign="center" data-align="left"
+							data-sortable="false">Name</th>
+						<th data-field="status.cronHumanExpression" data-halign="center"
+							data-align="left" data-sortable="false">Cron Expression</th>
+						<th data-field="status.statusCd" data-halign="center"
+							data-align="left" data-sortable="false">Status</th>
+						<th data-field="active" data-halign="center" data-align="center"
+							data-sortable="false">Job Running</th>
+						<th data-field="action" data-halign="center" data-align="center"
+							data-sortable="false" data-formatter="actionFormatter">Action</th>
+					</tr>
+				</thead>
+			</table>
+		</div>
+	</div>
+</body>
+
+<script type="text/javascript">
+	$("#scheduleForm")
+			.submit(
+					function(event) {
+
+						// Stop form from submitting normally
+						event.preventDefault();
+
+						// Get some values from elements on the page:
+						var $form = $(this), taskName = $form.find(
+								"input[name='s']").val(), email = $form.find(
+								"input[name='email']").val(), graceTime = $form
+								.find("input[name='graceTime']").val(), outageFrom = $form
+								.find("input[name='outageFrom']").val(), outageTo = $form
+								.find("input[name='outageTo']").val(), hostName = $form
+								.find("input[name='hostName']").val(), port = $form
+								.find("input[name='port']").val(), cronExpression = $form
+								.find("input[name='cronExpression']").val();
+
+
+						var d = "{\"id\":\"\",\"name\":\"" + taskName
+								+ "\",\"email\":\"" + email
+								+ "\",\"graceTime\":\"" + graceTime
+								+ "\",\"outageFrom\":\"" + outageFrom
+								+ "\",\"outageTo\":\"" + outageTo
+								+ "\",\"status\":{\"hostName\":\"" + hostName
+								+ "\",\"port\":\"" + port
+								+ "\",\"cronExpression\":\"" + cronExpression
+								+ "\"}}";
+
+						console.log(d);
+
+						$.ajax({
+							method : "POST",
+							url : "create",
+							contentType : "application/json",
+							data : d
+						}).done(function(msg) {
+							document.getElementById("scheduleForm").reset();
+							$("#schedulerTable").bootstrapTable('refresh');
+						});
+
+					});
+
+	$(function() {
+		$("#outageFrom").datetimepicker();
+		$("#outageTo").datetimepicker();
+	});
+	function submit() {
+		var data = {};
+		var status = {};
+
+		$("#schedulerForm :input").serializeArray().map(function(x) {
+			console.log("x--" + JSON.stringify(x));
+			data[x.name] = x.value;
+		});
+
+		$("#statusForm :input").serializeArray().map(function(x) {
+			console.log("x--" + JSON.stringify(x));
+			status[x.name] = x.value;
+		});
+
+		data["status"] = status;
+		console.log("json--" + JSON.stringify(data));
+		$.ajax({
+			method : "POST",
+			url : "create",
+			contentType : "application/json",
+			data : JSON.stringify(data)
+		}).done(function(msg) {
+			$("#schedulerForm :input").each(function() {
+				$(this).val("");
+			});
+			$("#statusForm :input").each(function() {
+				$(this).val("");
+			});
+			$("#schedulerTable").bootstrapTable('refresh');
+		});
+
+	}
+
+	function responseHandler(data) {
+		if (data.data != null && data.data.total != null)
+			return data.data;
+		else
+			return {
+				"rows" : [],
+				"total" : 0
+			};
+	}
+
+	function actionFormatter(value, row, index) {
+
+		var action = (row.active === true) ? '<button onclick="stop(' + row.id
+				+ ')" type="button" class="btn-xs btn-danger">Stop</button>'
+				: '<button onclick="start('
+						+ row.id
+						+ ')" type="button" class="btn-xs btn-success">Start</button>';
+
+		var edit = "<button onclick='edit(" + JSON.stringify(row)
+				+ ")' type='button' class='btn-xs btn-primary'>Edit</button>";
+		var del = '<button onclick="del(' + row.id
+				+ ')" type="button" class="btn-xs btn-danger">Delete</button>'
+
+		return action + '&nbsp' + edit + '&nbsp' + del;
+
+	}
+
+	function del(id) {
+		$.ajax({
+			method : "GET",
+			url : "delete/" + id
+		}).done(function(msg) {
+			$("#schedulerTable").bootstrapTable('refresh');
+		});
+	}
+
+	function edit(row) {
+		$.each(row, function(key, value) {
+			$('#schedulerForm [name=' + key + ']').val(value);
+		});
+	}
+
+	function start(id) {
+		$.ajax({
+			method : "GET",
+			url : "start/" + id
+		}).done(function(msg) {
+			$("#schedulerTable").bootstrapTable('refresh');
+		});
+	}
+
+	function stop(id) {
+		$.ajax({
+			method : "GET",
+			url : "stop/" + id
+		}).done(function(msg) {
+			$("#schedulerTable").bootstrapTable('refresh');
+		});
+	}
+</script>
+
+</html>
